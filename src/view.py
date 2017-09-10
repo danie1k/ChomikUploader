@@ -295,7 +295,7 @@ def change_print_coding(text):
         except Exception:
             try:
                 text = text.decode('cp1250')
-            except Exception, e:
+            except Exception as e:
                 pass
     return text
 
@@ -327,8 +327,8 @@ class View(object):
         try:
             self.last_update   = time.time()
             self._wipe_progress_bars()
-            for i in args: print change_print_coding(i),
-            print
+            for i in args: print(change_print_coding(i)),
+            print()
             self._show_progress_bars()
             sys.stdout.flush()
         finally:
@@ -354,7 +354,7 @@ class View(object):
         for progress_bar in self.progress_bars:
             #TODO: kodowanie
             #sys.stdout.write( change_print_coding(progress_bar.name) )
-            print change_print_coding(progress_bar.name[-80:]),
+            print(change_print_coding(progress_bar.name[-80:])),
             sys.stdout.write('\r\n')
             sys.stdout.write(progress_bar.get_meter())
             sys.stdout.write('\r\n')
@@ -385,7 +385,7 @@ class View(object):
         self.lock.acquire()
         try:
             #sys.stdout.write( change_print_coding(progress_bar_object.name) )
-            print change_print_coding(progress_bar_object.name),
+            print(change_print_coding(progress_bar_object.name)),
             sys.stdout.write('\r\n')
             sys.stdout.write(progress_bar_object.get_meter())
             sys.stdout.write('\r\n')        
@@ -402,7 +402,7 @@ class View(object):
         try:
             #sys.stdout.write( change_print_coding(progress_bar_object.name) )
             self._wipe_progress_bars()
-            print change_print_coding(progress_bar_object.name),
+            print(change_print_coding(progress_bar_object.name)),
             sys.stdout.write('\r\n')
             progress_bar_object.update_to_display()
             sys.stdout.write(progress_bar_object.get_meter())

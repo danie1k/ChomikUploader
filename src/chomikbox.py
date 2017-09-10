@@ -9,7 +9,6 @@
 # Ver: 0.5
 
 import socket
-import urllib2
 import hashlib
 import re
 import sys
@@ -17,14 +16,16 @@ import time
 import os
 import zlib
 #import progress
-import view
+from six import unichr
+
 import traceback
-import model
 import time
 import cgi
 import random
+
+from . import model, view
 ##################
-from soap import SOAP
+from .soap import SOAP
 
 
 def debug_fun(tb):
@@ -54,7 +55,7 @@ def debug_fun(tb):
     v.print_( "-"*10 )
 
 ###########################################################
-import htmlentitydefs, re
+import html.entities as htmlentitydefs, re
 
 _char = re.compile(r'&(\w+?);')
 _dec  = re.compile(r'&#(\d{2,4});')
@@ -80,10 +81,7 @@ def unescape(string):
     result = _hex.sub(lambda x: unichr(int(x.group(1), 16)),\
         _dec.sub(lambda x: unichr(int(x.group(1))),\
             _char.sub(_char_unescape, string)))
-    if string.__class__ != unicode:
-        return result.encode('utf-8')
-    else:
-        return result
+    return result
 ###########################################################
 glob_timeout = 20
 #KONFIGURACJA
@@ -100,22 +98,11 @@ def change_coding(text):
     try:
         if sys.platform.startswith('win'):
           text = text.decode('cp1250').encode('utf-8')
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
     return text
 
-def to_unicode(text):
-    try:
-        if sys.platform.startswith('win'):
-            text = text.decode('cp1250')
-        else:
-            text = text.decode('utf8')
-    except Exception, e:
-        print e
-    return text
-
-
-def escape_name(text):  
+def escape_name(text):
     return cgi.escape(text)
 
 def unescape_name(text):
@@ -182,11 +169,11 @@ class Chomik(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(glob_timeout)
         sock.connect( (login_ip, login_port) )
-        sock.send(content)
+        sock.send(str.encode(content))
         resp = ""
         kRespSize = 2056
         while True:
-            tmp = sock.recv(kRespSize)
+            tmp = sock.recv(kRespSize).decode()
             resp   += tmp
             #if tmp ==  '' or tmp.endswith("\r\n\r\n"):
             if tmp.endswith("\r\n\r\n") and resp.count("\r\n\r\n") >= 2 or tmp == '':
@@ -223,7 +210,7 @@ class Chomik(object):
         if self.last_login + 300 > time.time():
             return True
         self.last_login = time.time()
-        password = hashlib.md5(self.password).hexdigest()
+        password = hashlib.md5(self.password.encode()).hexdigest()
         xml_dict = [('ROOT',[('name' , self.user), ('passHash', password), ('ver' , '4'), ('client',[('name','chomikbox'),('version',version) ]) ])]
         xml_content = self.soap.soap_dict_to_xml(xml_dict, "Auth").strip()
         xml_len = len(xml_content)
@@ -252,7 +239,7 @@ class Chomik(object):
             self.chomik_id = chomik_id
             if self.ses_id == "-1" or self.chomik_id == "-1":
                 return False 
-        except IndexError, e:
+        except IndexError as e:
             self.view.print_( "Blad(relogin):" )
             self.view.print_( e )
             #self.view.print_( resp )
@@ -360,7 +347,7 @@ class Chomik(object):
             if type(list_of_subfolders) == dict:
                 list_of_subfolders = [list_of_subfolders]
             name = self.__dirname_refinement(f)
-            name = to_unicode(name)
+            name = name
             if name in [unescape_name(i.get("name","")) for i in list_of_subfolders ]:
                 for i in list_of_subfolders:
                     if name == unescape_name(i.get("name","")):
@@ -383,7 +370,7 @@ class Chomik(object):
             if type(list_of_subfolders) == dict:
                 list_of_subfolders = [list_of_subfolders]
             name = self.__dirname_refinement(f)
-            name = to_unicode(name)
+            name = name
             if name in [unescape_name(i.get("name","")) for i in list_of_subfolders ]:
                 for i in list_of_subfolders:
                     if name == unescape_name(i.get("name","")):
@@ -409,7 +396,7 @@ class Chomik(object):
         """
         Usuwa niedozwolone znaki z nazwy katalogu
         """
-        dirname = to_unicode(dirname)[:256]
+        dirname = dirname[:256]
         #\ / : * ? " < > |.
         not_allowed = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
         for ch in not_allowed:
@@ -419,7 +406,6 @@ class Chomik(object):
             dirname = dirname[1:]
         if dirname.endswith("."):
             dirname = dirname[:-1]         
-        dirname = dirname.encode('utf8')
         return dirname
     
     def mkdir(self, dirname, folder_id = None):
@@ -429,7 +415,6 @@ class Chomik(object):
         #if len(dirname) > 100:
         #    self.view.print_( "Dirname too long" )
         #    self.view.print_( "Dirname shortened\r\n" )
-        #    dirname = to_unicode(dirname).encode("utf8")
         dirname = self.__dirname_refinement(dirname)
         self.relogin()
         if folder_id == None:
@@ -522,7 +507,7 @@ class Chomik(object):
     def __upload_with_resume_option(self, filepath, filename, token, stamp, server, port, chomik_id, folder_id):
         try:
             result = self.__upload(filepath, filename, token, stamp, server, port)
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.view.print_("Wznawianie\n")
             result = self.resume(filepath, filename, folder_id, chomik_id, token, server, port, stamp)
         return result
@@ -564,7 +549,7 @@ class Chomik(object):
             self.locale = resp_dict['s:Envelope']['s:Body']['UploadTokenResponse']['UploadTokenResult']['a:locale']
             self.server, _, self.port = self.server.partition(":")
             return self.token, self.stamp, self.server, self.port
-        except IndexError, e:
+        except IndexError as e:
             self.view.print_( "Blad(pobieranie informacji z chomika):", e )
             self.view.print_( resp )
             return None, None, None, None
@@ -586,7 +571,7 @@ class Chomik(object):
         sock.settimeout(glob_timeout)
         ip = socket.gethostbyname_ex(server)[2][0]
         sock.connect( ( ip , int(port) ) )
-        sock.send(header)
+        sock.send(str.encode(header))
         
         f = open(filepath,'rb')
         pb = view.ProgressBar(total=size, rate_refresh = 0.5, count = 0, name = filepath)
@@ -613,8 +598,8 @@ class Chomik(object):
                     last_time = now
             f.close()        
             #self.view.print_( 'Sending tail' )
-            sock.send(contenttail)
-        except Exception, e:
+            sock.send(str.encode(contenttail))
+        except Exception as e:
         	if self.debug:
         	    trbck = sys.exc_info()[2]
         	    debug_fun(trbck)
@@ -625,7 +610,7 @@ class Chomik(object):
         
         resp = ""
         while True:
-            tmp = sock.recv(640)
+            tmp = sock.recv(640).decode()
             resp   += tmp
             if tmp ==  '' or "/>" in resp:
                 break
@@ -655,7 +640,7 @@ class Chomik(object):
         	contentheader += boundary + '\r\nname="resume_from"\r\nContent-Type: text/plain\r\n\r\n{0}\r\n'.format(resume_from)
         contentheader += boundary + '\r\nname="client"\r\nContent-Type: text/plain\r\n\r\n{0}\r\n'.format(client)
         contentheader += boundary + '\r\nname="locale"\r\nContent-Type: text/plain\r\n\r\n{0}\r\n'.format("PL")
-        tmp = unicode('\r\nname="file"; filename="{0}"\r\n\r\n', "utf8").format(filename.decode("utf8"))
+        tmp = '\r\nname="file"; filename="{0}"\r\n\r\n'.format(filename)
         contentheader += boundary + tmp
         
         contenttail   = "\r\n" + boundary + '--\r\n\r\n'
@@ -669,7 +654,7 @@ class Chomik(object):
         header  += "Content-Length: {0}\r\n\r\n".format(contentlength)
         header  += contentheader
         
-        return header.encode("utf8"), contenttail
+        return header, contenttail
     
     
 #####################################################    
@@ -691,7 +676,7 @@ class Chomik(object):
         try:
             result = self.__resume(filepath, filename, token, server, port, stamp, filesize_sent)
             self.view.print_( "Result", result )
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             self.view.print_("Wznawianie\n")
             result = self.resume(filepath, filename, folder_id, chomik_id, token, server, port, stamp)
         return result
@@ -721,7 +706,7 @@ class Chomik(object):
         try:
             filesize_sent = int(re.findall( """<resp file_size="([^"]*)" skipThumbnails="[^"]*" res="1"/>""", resp)[0])
             return filesize_sent
-        except IndexError, e:
+        except IndexError as e:
             self.view.print_( "Nie mozna bylo wznowic pobierania" )
             self.view.print_( resp )
             return -1
@@ -763,7 +748,7 @@ class Chomik(object):
                     last_time = now
             f.close()        
             sock.send(contenttail)
-        except Exception, e:
+        except Exception as e:
             if self.debug:
                 trbck = sys.exc_info()[2]
                 debug_fun(trbck)

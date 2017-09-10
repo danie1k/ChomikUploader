@@ -10,18 +10,16 @@
 import os
 import threading
 import re
-import view
 import sys
 
+from . import view
 
 def change_coding(text):
     try:
-        if type(text) == unicode:
-          text = text.encode('utf-8')  
-        elif sys.platform.startswith('win'):
-          text = text.decode('cp1250').encode('utf-8')
-    except Exception, e:
-        print e
+        if sys.platform.startswith('win'):
+            text = text.decode('cp1250').encode('utf-8')
+    except Exception as e:
+        print(e)
     return text
 
 def singleton(cls):
@@ -69,7 +67,7 @@ class Model(object):
             try:
                 filepath, filename, folder_id, chomik_id, token, host, port, stamp = re.findall("([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)", f)[0]
                 self.notuploaded_resume.append( (filepath, filename, folder_id, chomik_id, token, host, port, stamp) )
-            except IndexError, e:
+            except IndexError as e:
                 self.notuploaded_normal.append( f.strip() )
         
     
@@ -238,6 +236,6 @@ class Model(object):
     
 if __name__ == '__main__':
     m = Model()
-    print m.add_uploaded('./tmp.txt')
-    print m.is_uploaded_or_pended_and_add('./tmp.txt')
-    print m.is_uploaded_or_pended_and_add('./tmp.txt')
+    print(m.add_uploaded('./tmp.txt'))
+    print(m.is_uploaded_or_pended_and_add('./tmp.txt'))
+    print(m.is_uploaded_or_pended_and_add('./tmp.txt'))

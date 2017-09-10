@@ -3,13 +3,15 @@ from xml.dom.minidom import Document
 import xml.parsers.expat
 import copy
 
+import xmltodict
+
 
 class SOAP(object):
     def __init__(self):
         pass
     
     def soap_xml_to_dict(self, xml):
-        return parse(xml)
+        return xmltodict.parse(xml)
     
     def soap_dict_to_xml(self, soap_dict, method):
         '''
@@ -120,69 +122,11 @@ class DictSAXHandler:
         except KeyError:
             self.item[key] = data
 
-def parse(xml_input, *args, **kwargs):
-    """Parse the given XML input and convert it into a dictionary.
-
-    `xml_input` can either be a `string` or a file-like object.
-
-    If `xml_attribs` is `True`, element attributes are put in the dictionary
-    among regular child elements, using `@` as a prefix to avoid collisions. If
-    set to `False`, they are just ignored.
-
-    Simple example::
-
-        >>> doc = xmltodict.parse(\"\"\"
-        ... <a prop="x">
-        ...   <b>1</b>
-        ...   <b>2</b>
-        ... </a>
-        ... \"\"\")
-        >>> doc['a']['@prop']
-        u'x'
-        >>> doc['a']['b']
-        [u'1', u'2']
-
-    If `item_depth` is `0`, the function returns a dictionary for the root
-    element (default behavior). Otherwise, it calls `item_callback` every time
-    an item at the specified depth is found and returns `None` in the end
-    (streaming mode).
-
-    The callback function receives two parameters: the `path` from the document
-    root to the item (name-attribs pairs), and the `item` (dict). If the
-    callback's return value is false-ish, parsing will be stopped with the
-    :class:`ParsingInterrupted` exception.
-
-    Streaming example::
-
-        >>> def handle(path, item):
-        ...     print 'path:%s item:%s' % (path, item)
-        ...     return True
-        ... 
-        >>> xmltodict.parse(\"\"\"
-        ... <a prop="x">
-        ...   <b>1</b>
-        ...   <b>2</b>
-        ... </a>\"\"\", item_depth=2, item_callback=handle)
-        path:[(u'a', {u'prop': u'x'}), (u'b', None)] item:1
-        path:[(u'a', {u'prop': u'x'}), (u'b', None)] item:2
-
-    """
-    handler = DictSAXHandler(*args, **kwargs)
-    parser = xml.parsers.expat.ParserCreate()
-    parser.StartElementHandler = handler.startElement
-    parser.EndElementHandler = handler.endElement
-    parser.CharacterDataHandler = handler.characters
-    if hasattr(xml_input, 'read'):
-        parser.ParseFile(xml_input)
-    else:
-        parser.Parse(xml_input, True)
-    return handler.item
-
 if __name__ == '__main__':
     s = SOAP()
-    print parse("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>""")
-    print parse("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>""")    
-    print s.soap_xml_to_dict("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>""")
+    print(xmltodict.parse("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>"""))
+    print(xmltodict.parse("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>"""))
+    print(s.soap_xml_to_dict("""<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><AuthResponse xmlns="http://chomikuj.pl/"><AuthResult xmlns:a="http://chomikuj.pl" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><a:status>Ok</a:status><a:errorMessage i:nil="true"/><a:hamsterId>5762328</a:hamsterId><a:publisherId i:nil="true"/><a:name>tmp_chomik1</a:name><a:token>092fb999-6494-48b5-b6fd-859c1595f7ab</a:token></AuthResult></AuthResponse></s:Body></s:Envelope>"""))
     Y = {'Body': {'client': [{'version': '2.0.4.3<', 'name': 'chomikbox'} ], 'ver': '4', 'name': 'tmp_chomik1', 'passHash': 'ba2e57cbd8546cffd7db6bfd4077758b'}}
     X = """<T uri="boo"><a n="1"/><a n="2"/><b n="3"><c x="y"/></b></T>"""
     user = "a"
@@ -191,7 +135,7 @@ if __name__ == '__main__':
     example = [('ROOT',[('name' , user), ('passHash', password), ('ver' , '4'), ('client',[('name','chomikbox'),('version','2.0.4.3') ]) ])]
     #example = [('ROOT', [('client', 'w')])]
     #example = {'ROOT':{'client':{'version':'2.0.4.3','name':'chomikbox' }, 'ver' : '4', 'name' : 'tmp_chomik1', 'passHash': 'ba2e57cbd8546cffd7db6bfd4077758b'}}
-    print dict2xml(example)
-    print dict2xml(example)
+    print(dict2xml(example))
+    print(dict2xml(example))
     
-    print s.soap_dict_to_xml(example, "Auth")
+    print(s.soap_dict_to_xml(example, "Auth"))

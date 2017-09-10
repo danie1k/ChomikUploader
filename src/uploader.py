@@ -8,14 +8,15 @@
 #
 # Ver: 0.5
 
-import view
-from chomikbox import *
 import getpass
 import re
 import traceback
-import model
 import threading
 import select
+
+from . import model, view
+from .chomikbox import *
+
 ##########################################
 
 def debug_fun(tb):
@@ -77,7 +78,7 @@ class Uploader(object):
         self.uploaded_file    = 'uploaded.txt'
         self.chomik = Chomik(self.view, self.model, debug=self.debug)
         if self.user == None:
-            self.user     = raw_input('Podaj nazwe uzytkownika:\n')
+            self.user     = input('Podaj nazwe uzytkownika:\n')
         if self.password == None:
             self.password = getpass.getpass('Podaj haslo:\r\n')
         self.view.print_('Logowanie')
@@ -93,7 +94,7 @@ class Uploader(object):
         self.view.print_( 'Uploadowanie' )
         try:
             result = self.chomik.upload(filepath, os.path.basename(filepath))
-        except Exception, e:
+        except Exception as e:
             self.view.print_( 'Blad: ', e )
             if self.debug:
                 trbck = sys.exc_info()[2]
@@ -158,7 +159,7 @@ class Uploader(object):
         self.view.print_( 'Uploadowanie pliku:', filepath )
         try:
             result = self.chomik.upload(filepath, os.path.basename(filepath))
-        except Exception, e:
+        except Exception as e:
             self.view.print_( 'Blad:', e )
             self.view.print_( 'Blad. Plik ',filepath, ' nie zostal wyslany\r\n' )
             if self.debug:
@@ -184,7 +185,7 @@ class Uploader(object):
         lock.acquire()
         try:
             changed = self.chomik.chdirs(dr)
-        except Exception, e:
+        except Exception as e:
             self.view.print_( 'Blad. Nie wyslano katalogu: ', os.path.join(dirpath, dr)  )
             self.view.print_( e )
             if self.debug:
@@ -220,7 +221,7 @@ class Uploader(object):
         self.view.print_( 'Wznawianie pliku:', filepath )
         try:
             result = self.chomik.resume(filepath, filename, folder_id, chomik_id, token, host, port, stamp)
-        except Exception, e:
+        except Exception as e:
             self.view.print_( 'Blad:', e)
             if self.debug:
                 trbck = sys.exc_info()[2]
@@ -255,7 +256,7 @@ class Uploader(object):
             pass
         #########################
         th = []
-        for i in xrange(n):
+        for i in range(n):
             upl = UploaderThread(self.user, self.password, chomikpath, dirpath, view_ = self.view, model_ = self.model, debug = self.debug)
             upl.start()
         while threading.active_count() > 1:
