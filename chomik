@@ -1,9 +1,59 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
+#!/usr/bin/env python
+import argparse
+import os
+
+from sys import version_info
+
+assert version_info >= (3, 4)
+
+CWD = os.getcwd()
 
 
 try:
-    import chomikuploader.main
-    #raise ImportError
-except ImportError, e:
-    import src.main
+    from chomikuploader.main import Main
+except ImportError:
+    from src.main import Main
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '-d', '--debug', action='store_true',
+        help='Więcej informacji o błędach programu'
+    )
+    parser.add_argument(
+        '-t', '--threads', default=1,
+        help='Liczba wątków (ilość plików wysyłanych jednocześnie)'
+    )
+    parser.add_argument(
+        '-l', '--login',
+        help='Nazwa/login chomika'
+    )
+    parser.add_argument(
+        '-p', '--password', metavar='HASŁO', 
+        help='Hasło chomika'
+    )
+
+    parser.add_argument(
+        '-r', '--recursive', action='store_true',
+        help=(
+            'Wysyła zawartość katalogu i wszystkich podkatalogów, '
+            'na chomiku tworzona jest cała struktura'
+        )
+    )
+
+    parser.add_argument(
+        'source', metavar='SCIEZKA_LOKALNA',
+        help='Ścieżka do pliku lub katalogu na komputerze'
+    )
+
+    parser.add_argument(
+        'destination', metavar='KATALOG_W_CHOMIKU',
+        help='Docelowy katalog na chomiku'
+    )
+
+    kwargs = parser.parse_args()
+
+    main = Main(cwd=CWD, **kwargs.__dict__)
+    main.upload()

@@ -1,75 +1,79 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# Author: Adam Grycner (adam_gr [at] gazeta.pl)
-#
-# Written: 12/11/2011
-#
-# Released under: GNU GENERAL PUBLIC LICENSE
-#
-# Ver: 0.4
+from pathlib import Path
 
-import uploader   
-import sys
-import getopt
+from . import uploader
 
-######################################################################################    
-def usage():
-    print 'Użycie programu:'
-    print 'python', sys.argv[0], '[-h|--help]  [-l|--login nazwa_chomika] [-p|--password haslo chomika] [-r|--recursive katalog_w_chomiku katalog_na_dysku] [-u|--upload katalog_w_chomiku sciezka_do_pliku]\n'
-    print '-h,--help\t\t pokazuje pomoc programu'
-    print '-r,--recursive\t\t wysyla zawartosc katalogu (oraz wszystkich podkatalogow) na chomika do wskazanego katalogu. Na chomiku tworzona jest cala struktura podkatalogow. Przykład:',
-    print 'python', sys.argv[0], '-r "/katalog1/katalog2/katalog3" "/home/nick/Dokumenty"'
-    print '-u,--upload\t\t wysyla plik na chomika do wskazanego katalogu.Przykład:',
-    print 'python', sys.argv[0], '-u "/katalog1/katalog2/katalog3" "/home/nick/Dokumenty/dokument1.txt"'
-    print '-l,--login\t\t login/nazwa_uzytkownika do chomika'
-    print '-p,--password\t\t haslo do chomika. Przyklad:',
-    print 'python', sys.argv[0], '-l nazwa_chomika -p haslo -u "/katalog1/katalog2/katalog3" "/home/nick/Dokumenty/dokument1.txt"'
-    print '-d, --debug\t\t wyswietala wiecej informacji przy okazji bledu programu'
-    print '-t, --threads\t\t liczba watkow (ile plikow jest jednoczescnie wysylanych). Przyklad: ',
-    print 'python', sys.argv[0], '-t 5 -r "/katalog1/katalog2/katalog3" "/home/nick/Dokumenty"'
-    
-#if __name__ == '__main__':
-if True:
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hrul:p:dt:', ['help','recursive', 'upload', 'login', 'password','debug', 'threads'])
-    except Exception, e:
-        print 'Przekazano niepoprawny parametr'
-        print e
-        usage()
-        sys.exit(2)
-    
-    if opts == []:
-        usage()
-    
-    login    = None
+
+class Main:
+    cwd = None
+    debug = None
+    destination = None
+    login = None
     password = None
-    threads  = 1
-    debug    = False
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage()
-            sys.exit()
-        elif opt in ('-l', '--login'):
-            login = arg
-        elif opt in ('-p', '--password'):
-            password = arg
-        elif opt in ('-t', '--threads'):
-            threads = int(arg)
-        elif opt in ('-d', '--debug'):
-            debug = True
-    try:
-        for opt, arg in opts:
-            if opt in ('-r', '--recursive'):
-                chomik_path, dirpath = args
-                u = uploader.Uploader(login, password, debug = debug)
-                if threads > 1:
-                    u.upload_multi(chomik_path, dirpath, threads)
-                else:
-                    u.upload_dir(chomik_path, dirpath)
-            elif opt in ('-u', '--upload'):
-                chomik_path, filepath = args
-                u = uploader.Uploader(login, password, debug = debug)
-                u.upload_file(chomik_path, filepath)
-    except ValueError, e:
-        print e
-        print "Blad: Musisz podac zarowno sciezke na chomiku, jak i na dysku. Ktoras z tych sciezek opusciles"
+    recursive = None
+    source_path = None
+    threads = None
+    __source = None
+
+    def __init__(
+            self, cwd, source, destination, login=None, password=None,
+            recursive=False, threads=1, debug=False):
+        self.cwd = cwd
+        self.debug = debug
+        self.destination = destination
+        self.login = login
+        self.password = password
+        self.recursive = recursive
+        self.threads = threads
+        self.__source = source
+
+        self.__validate_source_path()
+        self.__validate_login()
+        self.__validate_password()
+
+    def upload(self):
+        u = uploader.Uploader(
+            self.login, self.password, debug=self.debug
+        )
+
+        if self.recursive:
+            if self.threads > 1:
+                u.upload_multi(
+                    self.destination, self.source_path, self.threads
+                )
+            else:
+                u.upload_dir(self.destination, self.source_path)
+        else:
+            u.upload_file(self.destination, self.source_path)
+
+    def __get_login(self):
+        while not self.login:
+            self.login = input('Login: ')
+
+    def __get_password(self):
+        while not self.password:
+            self.password = input('Hasło: ')
+
+    def __validate_login(self):
+        if not self.login:
+            self.__get_login()
+
+    def __validate_password(self):
+        if not self.password:
+            self.__get_password()
+
+    def __validate_source_path(self):
+        self.source_path = Path(self.__source)
+        if not self.source_path.is_absolute():
+            self.source_path = Path(self.cwd, self.source_path)
+
+        if not self.source_path.exists():
+            raise OSError('Ścieżka źródłowa nie istnieje')
+
+        if self.recursive:
+            if not self.source_path.is_dir():
+                raise OSError('Ścieżka źródłowa nie jest katalogiem')
+        else:
+            if not self.source_path.is_file():
+                raise OSError('Ścieżka źródłowa nie jest plikiem')
+
+        self.source_path = str(self.source_path)
