@@ -139,7 +139,11 @@ class ChomikException(Exception):
 #####################################################################################################
 #TODO: zmienic cos z kodowaniem
 class Chomik(object):
-    def __init__(self, view_ = None, model_ = None, debug = False):
+    logger = None
+
+    def __init__(self, view_ = None, model_ = None, logger=None, debug = False):
+        self.logger = logger
+
     	#reload(sys)
     	#sys.setdefaultencoding('utf8')
         if view_ == None:
@@ -195,8 +199,8 @@ class Chomik(object):
         Logowanie sie do chomika
         Zwraca True przy pomyslnym zalogowani, a False wpp
         """
-        self.user          = user
-        self.password      = password
+        self.user = user
+        self.password = password
         if self.relogin() == True:
             self.get_dir_list()
             return True
@@ -303,6 +307,7 @@ class Chomik(object):
         Zmien katalog na chomiku. Jezeli jakis katalog nie istnieje, to zostaje stworzony
         np. (chdirs(/katalog1/katalog2/katalog3) )
         """
+        self.logger.debug('Zmiana katalogu')
         #zamiana directories na liste kolejnych wezlow
         folders = self.cur_fold + [i.replace("/","") for i in directories.split('/') if i != '']
         fold    = []
@@ -325,6 +330,7 @@ class Chomik(object):
         else:
             result, dom, folder_id = self.__create_nodes(folders)
             if result == False:
+                self.logger.error('Nie udało się przejść do katalogu "%s"', directories)
                 return False
         self.cur_fold  = folders
         self.folder_id = folder_id

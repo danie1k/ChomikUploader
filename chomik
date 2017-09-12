@@ -1,26 +1,23 @@
 #!/usr/bin/env python
 import argparse
 import os
-
 from sys import version_info
 
 assert version_info >= (3, 4)
 
 CWD = os.getcwd()
 
-
 try:
-    from chomikuploader.main import Main
+    from chomikuploader.main import Main, setup_logger
 except ImportError:
-    from src.main import Main
-
+    from src.main import Main, setup_logger
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '-d', '--debug', action='store_true',
-        help='Więcej informacji o błędach programu'
+        '-v', '--verbose', action='store_true',
+        help='Wyświetla więcej komunikatów z działania programu'
     )
     parser.add_argument(
         '-t', '--threads', default=1,
@@ -36,14 +33,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-r', '--recursive', action='store_true',
-        help=(
-            'Wysyła zawartość katalogu i wszystkich podkatalogów, '
-            'na chomiku tworzona jest cała struktura'
-        )
-    )
-
-    parser.add_argument(
         'source', metavar='SCIEZKA_LOKALNA',
         help='Ścieżka do pliku lub katalogu na komputerze'
     )
@@ -54,6 +43,7 @@ if __name__ == '__main__':
     )
 
     kwargs = parser.parse_args()
+    logger = setup_logger(kwargs.verbose)
 
-    main = Main(cwd=CWD, **kwargs.__dict__)
+    main = Main(cwd=CWD, logger=logger, **kwargs.__dict__)
     main.upload()
