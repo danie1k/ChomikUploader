@@ -5,7 +5,6 @@ if sys.platform.startswith('win'):
     import py2exe
 
 AUTHOR = __import__('src').__author__
-EMAIL = __import__('src').__email__
 LICENSE = __import__('src').__license__
 VERSION = __import__('src').__version__
 
@@ -34,7 +33,7 @@ setup(
         'dicttoxml>=1.7.4',
         'lxml>=3.8.0',
         'progressbar2>=3.34.2',
-        'requests>2.18.4',
+        'requests>=2.18.4',
         'traitlets>=4.3.2',
         'xmltodict>=0.11.0',
     ]
