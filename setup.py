@@ -32,6 +32,8 @@ setup(
     console=['chomik'],
     zipfile=None,
     install_requires=[
-        'xmltodict>=0.11.0'
+        'progressbar2>=3.34.2',
+        'traitlets>=4.3.2',
+        'xmltodict>=0.11.0',
     ]
 )

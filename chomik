@@ -8,9 +8,36 @@ assert version_info >= (3, 4)
 CWD = os.getcwd()
 
 try:
-    from chomikuploader.main import Main, setup_logger
+    from chomikuploader.main import Main
 except ImportError:
-    from src.main import Main, setup_logger
+    from src.main import Main
+
+
+def setup_logger(verbose=False):
+    import logging
+    import sys
+
+    logger_format = '%(asctime)s [%(levelname)s] %(message)s'
+    logger = logging.getLogger('chomik')
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    if verbose:
+        logger_handler = logging.StreamHandler(stream=sys.stdout)
+        logger_handler.setLevel(logging.DEBUG)
+        logger_handler.setFormatter(logging.Formatter(logger_format))
+    else:
+        debug_handler = logging.NullHandler(level=logging.DEBUG)
+        logger.addHandler(debug_handler)
+
+        logger_handler = logging.StreamHandler(stream=sys.stdout)
+        logger_handler.setLevel(logging.INFO)
+        logger_handler.setFormatter(logging.Formatter(logger_format))
+
+    logger.addHandler(logger_handler)
+
+    return logger
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -18,10 +45,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help='Wyświetla więcej komunikatów z działania programu'
-    )
-    parser.add_argument(
-        '-t', '--threads', default=1,
-        help='Liczba wątków (ilość plików wysyłanych jednocześnie)'
     )
     parser.add_argument(
         '-l', '--login',

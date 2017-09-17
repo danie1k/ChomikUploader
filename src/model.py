@@ -114,25 +114,27 @@ class Model(object):
         finally:
             self.lock.release()
 
-    def add_notuploaded_resume(self, filepath, filename, folder_id, chomik_id, token, host, port, stamp):
+    def add_notuploaded_resume(
+            self, file_path, file_name, folder_id, chomik_id, token, stamp, server, port):
         """
         Dodawanie informacji o filepath i danych do wznawiania na liscie notuploaded i w pliku notuploaded.txt
         """
+        
         self.lock.acquire()
-        filepath = change_coding(filepath)
+        file_path = change_coding(file_path)
         try:
             #FIXME:danger
-            self._aux_remove_notuploaded_resume(filepath)
-            self._aux_remove_notuploaded_normal(filepath)
+            self._aux_remove_notuploaded_resume(file_path)
+            self._aux_remove_notuploaded_normal(file_path)
             self._save_notuploaded()
-            self.notuploaded_resume.append( (filepath, filename, folder_id, chomik_id, token, host, port, stamp) )
+            self.notuploaded_resume.append((file_path, file_name, folder_id, chomik_id, token, server, port, stamp))
             f = open(self.notuploaded_file_name,'a')
-            f.write(change_coding(filepath) + '\t')
-            f.write(change_coding(filename) + '\t')
+            f.write(change_coding(file_path) + '\t')
+            f.write(change_coding(file_name) + '\t')
             f.write(str(folder_id) + '\t')
             f.write(str(chomik_id) + '\t')
             f.write(str(token) + '\t')
-            f.write(str(host) + '\t')
+            f.write(str(server) + '\t')
             f.write(str(port) + '\t')
             f.write(str(stamp))
             f.write('\r\n')
@@ -140,16 +142,16 @@ class Model(object):
         finally:
             self.lock.release()
     
-    def remove_notuploaded(self, filepath):
+    def remove_notuploaded(self, file_path):
         """
         Usuwanie filepath z listy notuploaded i z pliku notuploaded.txt
         """
         self.lock.acquire()
-        filepath = change_coding(filepath)
+        file_path = change_coding(file_path)
         try:
             #FIXME:danger
-            self._aux_remove_notuploaded_resume(filepath)
-            self._aux_remove_notuploaded_normal(filepath)
+            self._aux_remove_notuploaded_resume(file_path)
+            self._aux_remove_notuploaded_normal(file_path)
             self._save_notuploaded()
         finally:
             self.lock.release()
