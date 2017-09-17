@@ -9,6 +9,7 @@ import xmltodict
 from collections import OrderedDict
 from http.client import HTTPResponse
 from json import JSONDecodeError
+from pathlib import Path
 from pyexpat import ExpatError
 from traitlets.traitlets import Any
 
@@ -16,7 +17,7 @@ from model import Model as HamsterModel
 from soap import ChomikSOAP, ChomikRequestMixin
 
 RELOGIN_TIME = 300
-SOCK_CHUNK = 1024
+REQUEST_CHUNK = 1024
 REQUEST_TIMEOUT = 20
 
 
@@ -176,7 +177,18 @@ class BaseChomikbox:
         multipart_data = self.__prepare_multipart_data(file_name, file_size)
         sock = self.__open_socket(self._upload_server, self._upload_port)
 
-        with progressbar.ProgressBar(max_value=file_size) as progress_bar:
+        def _init_progress_bar() -> progressbar.ProgressBar:
+            return progressbar.ProgressBar(
+                max_value=file_size,
+                widgets=[
+                    progressbar.AdaptiveTransferSpeed(),
+                    ' (', progressbar.ETA(), ') ',
+                    progressbar.Bar(), ' ',
+                    file_name[:40],
+                ]
+            )
+
+        with _init_progress_bar() as progress_bar:
             # Sending file header
             sock.send(multipart_data['header'].encode())
 
@@ -184,16 +196,23 @@ class BaseChomikbox:
             fp = open(file_path, 'rb')
             try:
                 while True:
-                    chunk = fp.read(SOCK_CHUNK)
+                    chunk = fp.read(REQUEST_CHUNK)
                     if not chunk:
                         break
                     sock.send(chunk)
 
-                    current_progress += SOCK_CHUNK
-                    progress_bar.update(current_progress)
+                    try:
+                        current_progress += REQUEST_CHUNK
+                        progress_bar.update(current_progress)
+                    except ValueError:
+                        progress_bar.update(file_size)
+            except Exception:
+                sock.close()
+                raise
             finally:
-                progress_bar.update(file_size)
                 fp.close()
+
+            progress_bar.update(file_size)
 
             # Sending file tail
             sock.send(multipart_data['tail'].encode())
@@ -370,7 +389,7 @@ class BaseChomikbox:
         resp = response.get('resp', {})
         error_msg = resp.get('@errorMessage')
         file_id = resp.get('@fileid')
-        res = resp.get('res')
+        res = resp.get('@res')
 
         if not (file_id and res == '1'):
             self.logger.warning('Nie udało się wysłać pliku - %s', error_msg)
@@ -435,16 +454,6 @@ class BaseChomikbox:
 
 
 
-
-
-
-
-
-
-
-
-
-
 class Chomik(ChomikRequestMixin, BaseChomikbox):
     _last_login = None
 
@@ -483,7 +492,8 @@ class Chomik(ChomikRequestMixin, BaseChomikbox):
     def rmdir(self, folder_id: int) -> None:
         self.request_rmdir(folder_id)
 
-    def upload(self, file_path: str) -> bool:
+    def upload_file(self, file_path: Path) -> bool:
+        file_path = str(file_path)
         self.model.add_notuploaded_normal(file_path)
 
         raw_file_name = os.path.basename(file_path)

@@ -1,13 +1,13 @@
-from chomikbox import Chomik
+from pathlib import Path
+
+from chomikbox import Chomik, ChomikException
 from model import Model as HamsterModel
 
 
 class BaseUploader:
     __hamster = None
     __model = None
-    __not_uploaded = 'notuploaded.txt'
     __password = None
-    __uploaded = 'uploaded.txt'
     __user = None
     logger = None
 
@@ -23,21 +23,35 @@ class BaseUploader:
             self.__hamster = Chomik(self.__user, self.__password, self.logger, self.__model)
         return self.__hamster
 
-    def _upload_dir(self, local_path, remote_path):
+    def _upload_dir(self, local_path: Path, remote_path: str) -> None:
         lock = self.__model.return_chdirlock()
         lock.acquire()
 
         try:
             self.hamster.chdir(remote_path)
-            raise NotImplementedError
-            # self.__upload_aux(local_path)
+            self.__upload_node(local_path)
             # self.__resume()
         finally:
             lock.release()
 
-    def _upload_file(self, local_path, remote_path):
-        self.hamster.chdir(remote_path)
-        self.hamster.upload(local_path)
+    def _upload_file(self, local_path: Path, remote_path: str=None) -> bool:
+        self.logger.debug('Wysłanie pliku "%s"', local_path)
+
+        if remote_path:
+            self.hamster.chdir(remote_path)
+
+        try:
+            result = self.hamster.upload_file(local_path)
+        except ChomikException as ex:
+            self.logger.error('Plik nie został wysłany - %s', ex)
+            return False
+
+        if not result:
+            self.logger.error('Plik nie został wysłany')
+            return False
+
+        self.logger.debug('Plik wysłany pomyślnie')
+        return True
 
     # TODO's ######################################################################################
 
@@ -82,30 +96,35 @@ class BaseUploader:
     #         self.__model.remove_notuploaded(filepath)
     #         self.__view.print_('Zakonczono uploadowanie\r\n')
     #         return True
-    #
-    # def __upload_aux(self, dirpath):
-    #     """
-    #     Uploaduje pliki z danego katalogu i jego podkatalogi.
-    #     """
-    #     files = [ i for i in os.listdir(dirpath) if os.path.isfile( os.path.join(dirpath, i) ) ]
-    #     files.sort()
-    #     dirs  = [ i for i in os.listdir(dirpath) if os.path.isdir( os.path.join(dirpath, i) ) ]
-    #     dirs.sort()
-    #     for fil in files:
-    #         #TODO: przetwarzany jest plik
-    #         filepath = os.path.join(dirpath, fil)
-    #         #if not self.model.in_uploaded(filepath):
-    #         if not self.__model.is_uploaded_or_pended_and_add(filepath):
-    #             self.__upload_file_aux(fil, dirpath)
-    #             self.__model.remove_from_pending(filepath)
-    #
-    #     for dr in dirs:
-    #         #address = self.hamster.cur_adr
-    #         address = self.hamster.curr_adr()
-    #         self.__upload_dir_aux(dirpath,dr)
-    #         self.hamster.curr_adr(address)
-    #         #self.hamster.cur_adr = address
-    #
+
+    def __upload_node(self, dir_path: Path) -> None:
+        """
+        Rekurencyjnie uploaduje zawartość katalogu
+        """
+        self.logger.info('Wysyłanie "%s"', dir_path)
+        files, directories = [], []
+
+        for path in sorted(dir_path.iterdir()):
+            if path.is_dir():
+                directories.append(path)
+            else:
+                files.append(path)
+
+        for path in files:
+            if self.__model.is_uploaded_or_pended_and_add(str(path)):
+                continue
+
+            self._upload_file(path)
+            self.__model.add_uploaded(str(path))
+            self.__model.remove_notuploaded(str(path))
+            self.__model.remove_from_pending(str(path))
+
+        for path in directories:
+            raise NotImplementedError
+            # address = self.hamster.curr_adr()
+            # self.__upload_dir_aux(path)
+            # self.hamster.curr_adr(address)
+
     # def __upload_dir_aux(self, dirpath,dr):
     #     """
     #     Zmiana pozycji na chomiku i wyslanie katalogu
@@ -129,33 +148,7 @@ class BaseUploader:
     #     if changed != True:
     #         self.__view.print_("Nie udalo sie zmienic katalogu", dr)
     #         return
-    #     self.__upload_aux( os.path.join(dirpath, dr) )
-    #
-    # def __upload_file_aux(self, fil, dirpath):
-    #     """
-    #     Wysylanie pliku wraz z kontrola bledow.
-    #     W odpowiednim pliku zapisujemy, czy plik zostal poprawnie wyslany
-    #     """
-    #     filepath = os.path.join(dirpath, fil)
-    #     self.__view.print_('Uploadowanie pliku:', filepath)
-    #     try:
-    #         result = self.hamster.upload(filepath, os.path.basename(filepath))
-    #     except Exception as e:
-    #         self.__view.print_('Blad:', e)
-    #         self.__view.print_('Blad. Plik ', filepath, ' nie zostal wyslany\r\n')
-    #
-    #         # if self.debug:  # @TODO Remove debug
-    #         #     trbck = sys.exc_info()[2]
-    #         #     debug_fun(trbck)
-    #
-    #         return
-    #
-    #     if result == False:
-    #         self.__view.print_('Blad. Plik ', filepath, ' nie zostal wyslany\r\n')
-    #     else:
-    #         self.__model.add_uploaded(filepath)
-    #         self.__model.remove_notuploaded(filepath)
-    #         self.__view.print_('Zakonczono uploadowanie\r\n')
+    #     self.__upload_node( os.path.join(dirpath, dr) )
 
 
 class Uploader(BaseUploader):
@@ -163,11 +156,9 @@ class Uploader(BaseUploader):
         """
         :type local_path: pathlib.Path
         :type remote_path: str
-        :type threads: int
         """
-        method = '_upload_file'
-
-        if local_path.is_dir():
-            method = '_upload_dir'
-
-        getattr(self, method)(str(local_path), remote_path)
+        uploaders = {
+            True: self._upload_dir,
+            False: self._upload_file,
+        }
+        uploaders[local_path.is_dir()](local_path, remote_path)
