@@ -14,7 +14,6 @@ from traitlets.traitlets import Any
 
 from model import Model as HamsterModel
 from soap import ChomikSOAP, ChomikRequestMixin
-from view import View as HamsterView
 
 RELOGIN_TIME = 300
 SOCK_CHUNK = 1024
@@ -55,16 +54,14 @@ class BaseChomikbox:
     logger = None
     soap_client = None
     model = None
-    view = None
     folder_id = 0
 
-    def __init__(self, user, password, logger, view=None, model=None):
+    def __init__(self, user, password, logger, model=None):
         self._user = user
         self._password = password
         self.logger = logger
         self.soap_client = ChomikSOAP()
         self.model = model or HamsterModel()
-        self.view = view or HamsterView()
 
     @property
     def chomik_id(self):

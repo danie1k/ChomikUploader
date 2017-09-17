@@ -3,8 +3,6 @@ import threading
 import re
 import sys
 
-import view
-
 
 def change_coding(text):
     try:
@@ -30,7 +28,6 @@ class Model(object):
         """
         Wczytywanie danych z plikow uploaded.txt i notuploaded.txt
         """
-        self.view                  = view.View()
         self.lock                  = threading.Lock()
         ##synchronizacja zmiany katalogow w chomiku
         self.chdirs_lock           = threading.Lock()

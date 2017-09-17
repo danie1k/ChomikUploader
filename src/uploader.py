@@ -1,6 +1,5 @@
 from chomikbox import Chomik
 from model import Model as HamsterModel
-from view import View as HamsterView
 
 
 class BaseUploader:
@@ -10,22 +9,18 @@ class BaseUploader:
     __password = None
     __uploaded = 'uploaded.txt'
     __user = None
-    __view = None
     logger = None
 
-    def __init__(self, user, password, logger, view=None, model=None):
+    def __init__(self, user, password, logger, model=None):
         self.__password = password
         self.__user = user
         self.logger = logger
         self.__model = model or HamsterModel()
-        self.__view = view or HamsterView()
 
     @property
     def hamster(self):
         if self.__hamster is None:
-            self.__hamster = Chomik(
-                self.__user, self.__password, self.logger, self.__view, self.__model
-            )
+            self.__hamster = Chomik(self.__user, self.__password, self.logger, self.__model)
         return self.__hamster
 
     def _upload_dir(self, local_path, remote_path):
