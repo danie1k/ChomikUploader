@@ -1,18 +1,10 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# Author: Adam Grycner (adam_gr [at] gazeta.pl)
-#
-# Written: 12/11/2011
-#
-# Released under: GNU GENERAL PUBLIC LICENSE
-#
-# Ver: 0.4
 import os
 import threading
 import re
 import sys
 
-from . import view
+import view
+
 
 def change_coding(text):
     try:

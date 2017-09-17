@@ -1,16 +1,9 @@
-# from itertools import groupby
-# from xml.dom.minidom import Document
-# import xml.parsers.expat
-# import copy
-#
-# import xmltodict
-from pyexpat import ExpatError
-from urllib.parse import urlunsplit
-
 import dicttoxml
 import requests
 import xmltodict
 from lxml import etree
+from pyexpat import ExpatError
+from urllib.parse import urlunsplit
 
 
 class ChomikRequestMixin:

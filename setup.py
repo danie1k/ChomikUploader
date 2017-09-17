@@ -13,7 +13,6 @@ setup(
     name='ChomikUploader',
     version=VERSION,
     author=AUTHOR,
-    author_email='dnk@dnk.net.pl',
     license=LICENSE,
     description='Uploading files on Chomikuj.pl',
     package_dir={'chomikuploader': 'src'},
@@ -32,7 +31,10 @@ setup(
     console=['chomik'],
     zipfile=None,
     install_requires=[
+        'dicttoxml>=1.7.4',
+        'lxml>=3.8.0',
         'progressbar2>=3.34.2',
+        'requests>2.18.4',
         'traitlets>=4.3.2',
         'xmltodict>=0.11.0',
     ]

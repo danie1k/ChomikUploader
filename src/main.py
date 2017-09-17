@@ -2,7 +2,7 @@ from getpass import getpass
 from pathlib import Path
 
 from chomikbox import ChomikException
-from . import uploader
+from uploader import Uploader
 
 
 class BaseMain:
@@ -54,7 +54,7 @@ class BaseMain:
 
 class Main(BaseMain):
     def upload(self):
-        u = uploader.Uploader(self.login, self.password, self.logger)
+        u = Uploader(self.login, self.password, self.logger)
 
         try:
             u.run(self.source_path, self.destination)

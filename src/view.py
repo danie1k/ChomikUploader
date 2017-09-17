@@ -1,21 +1,9 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# Author: Adam Grycner (adam_gr [at] gazeta.pl)
-#
-# Written: 12/11/2011
-#
-# Released under: GNU GENERAL PUBLIC LICENSE
-#
-# Ver: 0.4
-
 import ctypes
+import math
 import sys
 import threading
-import time, math   
+import time
 
-
-
-    
 
 ###############################################################################################################
 if sys.platform.startswith('win'):

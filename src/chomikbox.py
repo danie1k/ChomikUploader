@@ -1,13 +1,3 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# Author: Adam (adam_gr [at] gazeta.pl)
-#
-# Written: 22/11/2016
-#
-# Released under: GNU GENERAL PUBLIC LICENSE
-#
-# Ver: 0.5
-
 import hashlib
 import html
 import json
@@ -16,14 +6,10 @@ import progressbar
 import socket
 import time
 import xmltodict
-
+from collections import OrderedDict
 from http.client import HTTPResponse
 from json import JSONDecodeError
-from collections import OrderedDict
 from pyexpat import ExpatError
-
-
-
 from traitlets.traitlets import Any
 
 from model import Model as HamsterModel
@@ -65,12 +51,12 @@ class BaseChomikbox:
     _upload_stamp = None
     _upload_token = None
 
+    current_folders = None
     logger = None
     soap_client = None
     model = None
     view = None
     folder_id = 0
-    
 
     def __init__(self, user, password, logger, view=None, model=None):
         self._user = user
@@ -225,7 +211,7 @@ class BaseChomikbox:
 
         return self.__parse_upload_response(http_response)
 
-    def request_login_if_required(self, force_login: bool=False) -> bool:
+    def request_login_if_required(self, force_login: bool=False) -> None:
         if not force_login and ((self._last_login or 0) + RELOGIN_TIME > time.time()):
             return
         self._last_login = time.time()
@@ -378,7 +364,7 @@ class BaseChomikbox:
                 response = json.loads(http_response)
             except JSONDecodeError:
                 # This should never happen
-                raise ChomikException('Błąd krytyczny - odpowiedź serwera:\n%s', response)
+                raise ChomikException('Błąd krytyczny - odpowiedź serwera:\n%s', http_response)
             else:
                 raise ChomikException(
                     'Błąd wysyłania pliku - odpowiedź serwera:\n%s', response['ExceptionMessage']
@@ -464,7 +450,6 @@ class BaseChomikbox:
 
 class Chomik(ChomikRequestMixin, BaseChomikbox):
     _last_login = None
-    current_folders = None
 
     def chdir(self, target_path: str) -> None:
         """
@@ -474,12 +459,12 @@ class Chomik(ChomikRequestMixin, BaseChomikbox):
         self.logger.debug('Przechodzenie do ścieżki "%s"', target_path)
         directories = []
 
-        for dir in self._get_hamster_path(target_path):
-            if dir == '..':
-                if dir != []:  # @TODO: Verify what's going on here
+        for path in self._get_hamster_path(target_path):
+            if path == '..':
+                if path != []:  # @TODO: Verify what's going on here
                     del(directories[-1])
             else:
-                directories.append(dir[:self.FILE_OR_FOLDER_NAME_MAX_LENGTH])
+                directories.append(path[:self.FILE_OR_FOLDER_NAME_MAX_LENGTH])
 
 
         result, dom, folder_id = self._create_hamster_path(directories)

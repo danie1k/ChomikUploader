@@ -1,9 +1,6 @@
-import os
-import time
-
-from .chomikbox import Chomik
-from .model import Model as HamsterModel
-from .view import View as HamsterView
+from chomikbox import Chomik
+from model import Model as HamsterModel
+from view import View as HamsterView
 
 
 class BaseUploader:
